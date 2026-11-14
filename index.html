@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NovaQuest Arena</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="background-glow"></div>
+
+    <header class="topbar">
+      <div class="brand-wrap">
+        <div class="brand-mark">NQ</div>
+        <div>
+          <div class="brand-name">NovaQuest Arena</div>
+          <div class="brand-tag">Play. Create. Quest.</div>
+        </div>
+      </div>
+
+      <nav class="main-nav">
+        <a href="#play">Play</a>
+        <a href="#quests">Quests</a>
+        <a href="#create">Create</a>
+        <a href="#owner-tools">Owner</a>
+      </nav>
+
+      <button id="logoutBtn" class="ghost-btn hidden">Log out</button>
+    </header>
+
+    <main class="page-shell">
+      <section class="hero panel">
+        <div class="hero-copy">
+          <span class="eyebrow">Gaming universe</span>
+          <h1>Earn coins, join quests, and build your own games.</h1>
+          <p>
+            Welcome to the social gaming platform where players can jump into games,
+            complete challenges, and become creators.
+          </p>
+
+          <div class="cta-row">
+            <a class="primary-btn" href="#play">Start playing</a>
+            <a class="secondary-btn" href="#create">Create a game</a>
+          </div>
+        </div>
+
+        <div class="login-card" id="loginCard">
+          <h2>Enter arena</h2>
+          <label>
+            Username
+            <input id="usernameInput" type="text" placeholder="Type your username" />
+          </label>
+          <label>
+            Password (optional)
+            <input id="passwordInput" type="password" placeholder="Optional for guest mode" />
+          </label>
+          <button id="loginBtn" class="primary-btn full-width">Join</button>
+          <p class="disclaimer">
+            Guest players can play without a saved account, but persistent progress and privileged roles require a secure account.
+          </p>
+        </div>
+      </section>
+
+      <section class="status-bar panel" id="playerPanel">
+        <div class="status-chip">
+          <span class="status-label">User</span>
+          <strong id="displayUsername">Guest</strong>
+        </div>
+        <div class="status-chip">
+          <span class="status-label">Role</span>
+          <strong id="displayRole">Player</strong>
+        </div>
+        <div class="status-chip money-chip">
+          <span class="status-label">In-game money</span>
+          <strong id="displayMoney">0</strong>
+        </div>
+        <div class="status-chip">
+          <span class="status-label">Status</span>
+          <strong id="displayStatus">Online</strong>
+        </div>
+      </section>
+
+      <section class="dashboard-grid">
+        <div class="panel">
+          <div class="section-header">
+            <h3>Quest board</h3>
+            <span class="pill">Live</span>
+          </div>
+          <div id="questList" class="card-list"></div>
+        </div>
+
+        <div class="panel">
+          <div class="section-header">
+            <h3>Featured games</h3>
+            <span class="pill">New</span>
+          </div>
+          <div id="gameList" class="card-list"></div>
+        </div>
+      </section>
+
+      <section class="panel create-panel" id="create">
+        <div class="section-header">
+          <h3>Create a game</h3>
+          <span class="pill">Creator mode</span>
+        </div>
+
+        <div class="creator-form">
+          <input id="gameTitleInput" type="text" placeholder="Game title" />
+          <textarea id="gameDescInput" rows="3" placeholder="Describe your game"></textarea>
+          <input id="gameRewardInput" type="number" min="10" step="10" value="100" placeholder="Reward" />
+          <button id="createGameBtn" class="primary-btn">Publish game</button>
+        </div>
+      </section>
+
+      <section class="admin-layout">
+        <div class="panel" id="owner-tools">
+          <div class="section-header">
+            <h3>Owner tools</h3>
+            <span class="pill danger">Owner only</span>
+          </div>
+
+          <div class="tool-stack">
+            <div class="tool-row">
+              <input id="ownerTargetInput" type="text" placeholder="Player username" />
+              <input id="ownerAmountInput" type="number" min="0" step="10" value="100" />
+            </div>
+            <div class="tool-actions">
+              <button class="primary-btn" id="giftMoneyBtn">Gift in-game money</button>
+              <button class="secondary-btn" id="setBalanceBtn">Set balance</button>
+              <button class="danger-btn" id="banPlayerBtn">Ban player</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="section-header">
+            <h3>Role access</h3>
+            <span class="pill">Server-side</span>
+          </div>
+          <div class="role-list" id="roleList"></div>
+        </div>
+      </section>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
+</html>

@@ -1,31 +1,48 @@
 # Gaming Website
 
-A community gaming platform where players can play and create games, complete quests, and earn in-game currency. The platform supports owner, admin, and tester roles.
+This repository hosts a play-and-create gaming site prototype for:
 
-## Sign-in
+- playing games
+- creating games
+- earning in-game money from quests
+- owner-only moderation and economy controls
+- admin and tester roles
 
-- When entering the site, players choose a username and may set a password.
-- Password is optional for guest-style access; a username without a password is not secure proof of identity, so it must not grant access to an existing account or privileged features.
-- To protect a persistent account and its progress, encourage players to set a password. Store passwords only as strong salted hashes on the server—never in plain text.
+## Included demo accounts
 
-## Gameplay and rewards
+- Owner: `adam28749`
+- Admins: `zuby`, `ben54`
+- Tester: `cilly14`
 
-- Players can earn in-game currency by completing quests and playing games.
-- Quests and games should award currency through trusted server-side logic, not client-submitted balance changes.
-- Show players how much currency each quest or game can award.
+## Site behavior
 
-## Roles and requested account setup
+- The home page asks for a username and an optional password.
+- If the player does not provide a password, they enter guest mode.
+- Persistent accounts can log in with a password and keep their progress.
+- The owner can gift in-game money, set balances, and ban players.
+- Quests and games award coins to the active player.
+- A role panel shows ownership, admin, and tester access.
 
-- **Owner:** The site owner has full access to role management, moderation, and the economy.
-- **Admins:** `zuby` and `ben54` are requested admin accounts.
-- **Tester:** `cilly14` is a requested tester account.
-- **Testers:** Try games before release and provide feedback.
-- Assign privileged roles only to verified accounts, and store roles server-side. Do not rely on display names or usernames alone to authorize privileged actions.
+## Run locally
 
-## Moderation and economy
+Open `index.html` in a browser or serve the folder with any static server.
 
-- **Owner controls:** Set player balances, gift in-game currency, and ban or unban accounts.
-- **Admins:** Help moderate the community according to owner-assigned permissions.
-- **Safety:** Currency changes and moderation actions should be validated and recorded server-side, with a reason and audit trail. Never trust a balance or role supplied by the browser.
+Example:
 
-This repository is the initial project scaffold. The website and its secure backend still need to be implemented.
+```bash
+python3 -m http.server 8000
+```
+
+Then visit:
+
+```text
+http://localhost:8000
+```
+
+## GitHub Pages
+
+When GitHub Pages is enabled for this repository, the site will be available at:
+
+```text
+https://adam28749.github.io/gaming-website/
+```
