@@ -1,21 +1,23 @@
 # NovaQuest Arena
 
-A browser-based gaming prototype: play mini-games, earn demo coins, complete quests, and use Studio to create simple playable mini-games.
+Play mini-games and obstacle courses, earn demo coins, complete quests, and build simple games in Studio.
 
-## Website and search engines
+## Accounts and saving
 
-Public site: https://adam28749.github.io/gaming-website/
+Press **Join / continue** with a username. The site saves your demo profile, coins, quest progress, and created games in that browser's local storage and restores the current profile on reload. This is browser/device-local only: it does not sync to another browser or device, and clearing site data removes it. Optional password input is not real authentication; do not enter a real password.
 
-The site includes `robots.txt` and `sitemap.xml` to help search engines discover it. Search indexing is controlled by each search provider and may take time; these files do not guarantee that the site appears in results. Share the public URL directly so people can access it in any modern browser.
+## Obby game
 
-## Owner admin panel
+Open **Crystal Cave Obby** in Games. Move with arrow keys or WASD on desktop, or use the on-screen arrows on touch devices. Reach the checkered goal without stepping on lava to win coins. Studio also lets creators publish their own obby using the Obby template.
 
-Join using your owner demo account (enter the owner email in the email field) to show the Admin navigation and panel. Enter a player username, then choose Gift coins, Set balance, Ban player, or Unban player. The panel and actions are local browser demo behavior only.
+## Studio and owner panel
+
+Studio supports tap, target, quiz, and obby templates. The owner panel provides local demo controls to gift coins, set balances, ban/unban accounts, and see an action log. These are prototype features only and are not secure or shared across users.
+
+## Public site
+
+https://adam28749.github.io/gaming-website/
 
 ## Security limitations
 
-This is strictly a local browser demo. Email entry is not verified authentication, anyone can enter an email, and browser storage can be edited. Admin changes affect only the current browser and are not shared with players. Never use the panel for real accounts, bans, or currency. A production version needs verified server-side authentication, role checks, a database, and moderation audit logs.
-
-## Studio and games
-
-Studio lets players build and publish games using tap, target, or quiz templates. Published games and progress are stored only in the current browser.
+This static site has no server-side authentication, shared database, or secure role enforcement. Browser storage can be edited. The typed email/username role check is not verified identity. A production platform requires verified authentication plus server-side authorization, account storage, and moderation logs.
