@@ -1,309 +1,53 @@
-const STORAGE_KEY = 'novaquest-arena-studio-v3';
+const STORAGE_KEY = 'novaquest-walkabout-v1';
 const OWNER_EMAIL = 'oconnoradam1@icloud.com';
-const STAFF_ROLES = { zuby: 'admin', 'ben 54': 'admin', ben54: 'admin', cilly14: 'tester' };
-const ROWS = 7;
-const COLS = 10;
-const TILES = ['platform', 'lava', 'start', 'goal', 'erase'];
-const initial = {
-  currentUser: null,
-  players: {},
-  games: [
-    { id: 'star-catcher', title: 'Star Catcher', description: 'Tap ten times to catch enough stars.', template: 'tap', reward: 180, creator: 'NovaQuest' },
-    { id: 'target-hunt', title: 'Target Hunt', description: 'Pick the box hiding the star.', template: 'target', reward: 150, creator: 'NovaQuest' },
-    { id: 'quick-quiz', title: 'Quick Quiz', description: 'Answer the question correctly to win.', template: 'quiz', reward: 200, creator: 'NovaQuest', question: 'Which word means a world orbiting a star?', answer: 'planet' },
-    { id: 'crystal-obby', title: 'Crystal Cave Obby', description: 'Navigate the lava blocks and reach the star goal. Use arrow keys, WASD, or the on-screen arrows.', template: 'obby', reward: 250, creator: 'NovaQuest', map: ['.........G','..L.......','....L..L..','..L.......','.....L....','.L........','S...L.....'] }
-  ],
-  quests: [
-    { id: 'first-game', title: 'First game', description: 'Finish any mini-game or obby round.', reward: 120 },
-    { id: 'quest-runner', title: 'Quest runner', description: 'Complete a quest on the board.', reward: 80 },
-    { id: 'creator', title: 'World builder', description: 'Publish a world from Studio.', reward: 100 }
-  ],
-  completed: {},
-  audit: []
-};
-let state = loadState();
-let activeGame = null;
-let taps = 0;
-let obbyPosition = { x: 0, y: ROWS - 1 };
-let selectedTile = 'platform';
-let editorMap = makeEmptyMap();
-let toastTimer;
+const STAFF = { zuby: 'admin', 'ben 54': 'admin', ben54: 'admin', cilly14: 'tester' };
+const ROWS = 7, COLS = 10, TILE = 48;
 const $ = id => document.getElementById(id);
-
-function makeEmptyMap() {
-  const map = Array.from({ length: ROWS }, () => Array(COLS).fill('platform'));
-  map[ROWS - 1][0] = 'start';
-  map[0][COLS - 1] = 'goal';
-  return map;
-}
-function loadState() {
-  try {
-    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    if (!saved || typeof saved !== 'object') return structuredClone(initial);
-    const merged = { ...structuredClone(initial), ...saved, players: saved.players || {}, completed: saved.completed || {}, audit: saved.audit || [] };
-    const ids = new Set(merged.games.map(game => game.id));
-    initial.games.forEach(game => { if (!ids.has(game.id)) merged.games.push(game); });
-    return merged;
-  } catch { return structuredClone(initial); }
-}
-function save() {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
-  catch { toast('Could not save: browser storage may be full or disabled.'); }
-}
-function keyFor(name) { return name.trim().toLowerCase(); }
-function player() { return state.currentUser ? state.players[state.currentUser] : null; }
-function safeElement(tag, text, className) {
-  const element = document.createElement(tag);
-  element.textContent = text;
-  if (className) element.className = className;
-  return element;
-}
-function toast(message) {
-  const element = $('toast');
-  element.textContent = message;
-  element.classList.add('show');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => element.classList.remove('show'), 3000);
-}
-function login(event) {
-  event.preventDefault();
-  const username = $('usernameInput').value.trim();
-  const email = $('emailInput').value.trim().toLowerCase();
-  if (!username) return toast('Choose a username to join.');
-  const key = keyFor(username);
-  let account = state.players[key];
-  if (account?.banned) return toast('This account is banned in this browser demo.');
-  if (!account) {
-    // Demo roles only. Typed usernames/emails are not verified identity.
-    const role = email === OWNER_EMAIL ? 'owner' : (STAFF_ROLES[key] || 'player');
-    account = state.players[key] = { username, email, role, money: 100, banned: false, createdAt: new Date().toISOString(), completedQuests: [] };
-  } else {
-    account.lastSeen = new Date().toISOString();
-    if (email && !account.email) account.email = email;
-    if (email === OWNER_EMAIL) account.role = 'owner';
-    account.completedQuests ||= [];
-  }
-  state.currentUser = key;
-  save();
-  render();
-  $('welcomeBanner').textContent = `Welcome to NovaQuest, ${account.username}! Your demo progress is saved in this browser.`;
-  $('welcomeBanner').classList.remove('hidden');
-  toast(`Welcome, ${account.username}!`);
-  $('welcomeBanner').scrollIntoView({ behavior: 'smooth', block: 'center' });
-}
-function logout() { state.currentUser = null; save(); render(); $('welcomeBanner').classList.add('hidden'); }
-function completed() {
-  const account = player();
-  if (!account) return [];
-  account.completedQuests ||= [];
-  return account.completedQuests;
-}
-function award(amount) {
-  const account = player();
-  if (!account) return;
-  account.money = (Number(account.money) || 0) + amount;
-  save(); renderStatus(); renderRoles();
-}
-function completeQuest(quest, quiet = false) {
-  if (!player()) return toast('Join before completing quests.');
-  if (player().banned) return toast('Banned players cannot complete quests.');
-  const done = completed();
-  if (done.includes(quest.id)) return;
-  done.push(quest.id);
-  award(quest.reward); save(); renderQuests();
-  if (!quiet) toast(`Quest completed: +${quest.reward} coins!`);
-}
-function renderQuests() {
-  const list = $('questList'); list.replaceChildren();
-  state.quests.forEach(quest => {
-    const card = document.createElement('article'); card.className = 'quest-card';
-    card.append(safeElement('h3', quest.title), safeElement('p', quest.description));
-    const row = document.createElement('div'); row.className = 'meta-row';
-    row.append(safeElement('span', `+${quest.reward} coins`, 'reward-tag'));
-    const done = completed().includes(quest.id);
-    const button = safeElement('button', done ? 'Completed' : 'Complete quest', 'quest-btn');
-    button.type = 'button'; button.disabled = done; button.addEventListener('click', () => completeQuest(quest));
-    row.append(button); card.append(row); list.append(card);
-  });
-}
-function renderGames() {
-  const list = $('gameList'); list.replaceChildren();
-  state.games.forEach(game => {
-    const card = document.createElement('article'); card.className = 'game-card';
-    card.append(safeElement('h3', game.title), safeElement('p', game.description));
-    const row = document.createElement('div'); row.className = 'meta-row';
-    row.append(safeElement('span', `+${game.reward} coins per win`, 'reward-tag'));
-    const button = safeElement('button', game.template === 'obby' ? 'Play obby' : 'Play game', 'play-btn');
-    button.type = 'button'; button.addEventListener('click', () => openGame(game)); row.append(button);
-    if (game.creator) row.append(safeElement('span', `by ${game.creator}`, 'game-credit'));
-    card.append(row); list.append(card);
-  });
-}
-function openGame(game) {
-  if (!player()) return toast('Join with a username before playing.');
-  if (player().banned) return toast('Banned players cannot play.');
-  activeGame = game; taps = 0;
-  $('activeGameTitle').textContent = game.title;
-  $('gameInstructions').textContent = game.description;
-  $('gameResult').textContent = '';
-  const area = $('gameArea'); area.replaceChildren();
-  if (game.template === 'obby') startObby(area, game);
-  else if (game.template === 'target') startTargetGame(area);
-  else if (game.template === 'quiz') startQuiz(area, game);
-  else startTapGame(area);
-  $('gameDialog').showModal();
-}
-function startTargetGame(area) {
-  area.append(safeElement('p', 'Which box hides the star? Choose one.'));
-  const target = Math.floor(Math.random() * 3); const choices = document.createElement('div'); choices.className = 'target-choices';
-  for (let i = 0; i < 3; i++) { const button = safeElement('button', `☆ ${i + 1}`, 'game-tap-btn target-button'); button.type = 'button'; button.addEventListener('click', () => finishGame(i === target)); choices.append(button); }
-  area.append(choices);
-}
-function startQuiz(area, game) {
-  area.append(safeElement('p', game.question || 'Which word means a world orbiting a star?'));
-  const answer = document.createElement('input'); answer.className = 'quiz-answer'; answer.placeholder = 'Type your answer'; answer.setAttribute('aria-label', 'Your answer'); area.append(answer);
-  const button = safeElement('button', 'Check answer', 'primary-btn'); button.type = 'button'; button.addEventListener('click', () => finishGame(answer.value.trim().toLowerCase() === (game.answer || 'planet'))); area.append(button);
-}
-function startTapGame(area) {
-  const progress = document.createElement('div'); progress.className = 'game-progress'; const fill = document.createElement('div'); progress.append(fill); area.append(progress);
-  const count = safeElement('p', '0 / 10', 'progress-text'); area.append(count);
-  const button = safeElement('button', 'TAP!', 'game-tap-btn'); button.type = 'button';
-  button.addEventListener('click', () => { if (taps >= 10) return; taps++; count.textContent = `${taps} / 10`; fill.style.width = `${taps * 10}%`; if (taps >= 10) finishGame(true); }); area.append(button);
-}
-function normalizeMap(source) {
-  if (!Array.isArray(source) || source.length !== ROWS) return makeEmptyMap();
-  return source.map(row => Array.from({ length: COLS }, (_, x) => ['platform','lava','start','goal'].includes(row[x]) ? row[x] : 'platform'));
-}
-function startObby(area, game) {
-  const map = normalizeMap(game.map);
-  const start = findTile(map, 'start') || { x: 0, y: ROWS - 1 };
-  obbyPosition = { ...start };
-  area.append(safeElement('p', 'Reach the star goal. Avoid lava. Use arrow keys / WASD or the on-screen controls.', 'obby-help'));
-  const board = document.createElement('div'); board.id = 'obbyBoard'; board.className = 'obby-board'; board.setAttribute('role','grid'); board.setAttribute('aria-label','Obstacle course'); area.append(board);
-  const controls = document.createElement('div'); controls.className = 'obby-controls';
-  [['up','↑'],['left','←'],['down','↓'],['right','→']].forEach(([direction,label]) => { const button = safeElement('button', label, 'obby-control'); button.type='button'; button.setAttribute('aria-label', `Move ${direction}`); button.addEventListener('click', () => moveObby(direction)); controls.append(button); });
-  area.append(controls); renderObbyBoard(map);
-}
-function findTile(map, wanted) {
-  for (let y=0;y<ROWS;y++) for (let x=0;x<COLS;x++) if (map[y][x]===wanted) return {x,y};
-  return null;
-}
-function renderObbyBoard(map = normalizeMap(activeGame?.map)) {
-  const board = $('obbyBoard'); if (!board) return; board.replaceChildren();
-  for (let y=0;y<ROWS;y++) for (let x=0;x<COLS;x++) {
-    const cell = document.createElement('div'); cell.className = `obby-cell ${map[y][x] || 'platform'}`; cell.setAttribute('role','gridcell');
-    if (map[y][x] === 'lava') { cell.classList.add('lava'); cell.textContent='🔥'; }
-    else if (map[y][x] === 'goal') { cell.classList.add('goal'); cell.textContent='⭐'; }
-    else if (map[y][x] === 'start') cell.textContent='';
-    if (x===obbyPosition.x && y===obbyPosition.y) { cell.classList.add('player-cell'); cell.textContent='🧑'; }
-    board.append(cell);
-  }
-}
-function moveObby(direction) {
-  if (!activeGame || activeGame.template !== 'obby' || $('gameResult').textContent) return;
-  const delta = {up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]}[direction]; if (!delta) return;
-  const x=obbyPosition.x+delta[0], y=obbyPosition.y+delta[1];
-  if (x<0 || y<0 || x>=COLS || y>=ROWS) return;
-  const map=normalizeMap(activeGame.map);
-  if (map[y][x]==='lava') { const start=findTile(map,'start') || {x:0,y:ROWS-1}; obbyPosition={...start}; renderObbyBoard(map); toast('Lava! Back to the start.'); return; }
-  obbyPosition={x,y}; renderObbyBoard(map);
-  if (map[y][x]==='goal') finishGame(true);
-}
-function onGameKeydown(event) {
-  if (!$('gameDialog').open || activeGame?.template!=='obby') return;
-  const keys={ArrowUp:'up',w:'up',W:'up',ArrowDown:'down',s:'down',S:'down',ArrowLeft:'left',a:'left',A:'left',ArrowRight:'right',d:'right',D:'right'};
-  if (keys[event.key]) { event.preventDefault(); moveObby(keys[event.key]); }
-}
-function finishGame(won) {
-  if (!activeGame || $('gameResult').textContent) return;
-  if (!won) { $('gameResult').textContent='Not quite! Try again.'; return; }
-  award(Number(activeGame.reward)||0); $('gameResult').textContent=`You won! +${activeGame.reward} coins.`;
-  const quest=state.quests.find(item=>item.id==='first-game'); if (quest && !completed().includes(quest.id)) completeQuest(quest,true);
-}
-function setEditorTile(tile) {
-  if (!TILES.includes(tile)) return;
-  selectedTile=tile;
-  document.querySelectorAll('.tile-choice').forEach(button=>button.classList.toggle('selected', button.dataset.tile===tile));
-  $('studioHint').textContent=`Selected: ${tile[0].toUpperCase()+tile.slice(1)}. Click or tap the grid to build your course.`;
-}
-function paintEditorCell(x,y) {
-  if (selectedTile==='start' || selectedTile==='goal') {
-    const old=findTile(editorMap,selectedTile);
-    if (old) editorMap[old.y][old.x]='platform';
-  }
-  editorMap[y][x]=selectedTile==='erase'?'platform':selectedTile;
-  renderEditor();
-}
-function renderEditor() {
-  const board=$('studioBoard'); board.replaceChildren();
-  for (let y=0;y<ROWS;y++) for (let x=0;x<COLS;x++) {
-    const tile=editorMap[y][x];
-    const button=safeElement('button', tile==='lava'?'🔥':tile==='start'?'S':tile==='goal'?'★':'', `studio-cell ${tile}`);
-    button.type='button'; button.setAttribute('role','gridcell'); button.setAttribute('aria-label',`${tile} tile, row ${y+1}, column ${x+1}`);
-    button.addEventListener('click',()=>paintEditorCell(x,y)); board.append(button);
-  }
-}
-function updatePreview() {
-  $('previewTitle').textContent=$('studioTitle').value.trim()||'Your world name';
-  $('previewDescription').textContent=$('studioDescription').value.trim()||'Your world instructions will appear here.';
-  $('previewTemplate').textContent=`Obby world · ${Number($('studioReward').value)||0} coins`;
-}
-function publishGame(event) {
-  event.preventDefault();
-  if (!player()) return toast('Join before publishing.');
-  if (player().banned) return toast('Banned players cannot publish worlds.');
-  const title=$('studioTitle').value.trim(), description=$('studioDescription').value.trim(), reward=Number($('studioReward').value);
-  if (!title || !description || !Number.isInteger(reward) || reward<0 || reward>1000) return toast('Check the name, instructions, and reward (0–1000).');
-  if (!findTile(editorMap,'start') || !findTile(editorMap,'goal')) return toast('Your world needs both a start and a goal tile.');
-  const map=editorMap.map(row=>row.slice());
-  state.games.unshift({id:`world-${Date.now()}`,title,description,template:'obby',reward,creator:player().username,map});
-  save(); renderGames();
-  const quest=state.quests.find(item=>item.id==='creator'); if (quest && !completed().includes(quest.id)) completeQuest(quest,true);
-  $('studioForm').reset(); editorMap=makeEmptyMap(); setEditorTile('platform'); renderEditor(); updatePreview();
-  toast('World published! Find it in Games and press Play obby.'); $('play').scrollIntoView({behavior:'smooth'});
-}
-function ownerAction(action) {
-  if (player()?.role!=='owner') return toast('Owner access required.');
-  const name=$('ownerTargetInput').value.trim(); if (!name) return toast('Enter the player username.');
-  const key=keyFor(name), target=state.players[key], reason=$('ownerReasonInput').value.trim()||'No reason provided';
-  const needsAmount=action==='gift'||action==='set', amount=needsAmount?Number($('ownerAmountInput').value):0;
-  if (needsAmount && (!Number.isInteger(amount)||amount<0||amount>1000000)) return toast('Enter whole coins from 0 to 1,000,000.');
-  if (!target && action!=='ban') return toast('That player has not joined in this browser.');
-  if (action==='ban' && target?.role==='owner') return toast('The owner account cannot be banned.');
-  if (action==='gift') target.money=(Number(target.money)||0)+amount;
-  if (action==='set') target.money=amount;
-  if (action==='ban') { state.players[key] ||= {username:name,role:'player',money:0}; state.players[key].banned=true; }
-  if (action==='unban') { if (!target) return toast('Player not found.'); target.banned=false; }
-  const actor=player().username, detail=action==='gift'?` (${amount} coins)`:action==='set'?` (balance ${amount})`:'';
-  state.audit.unshift(`${new Date().toLocaleString()}: ${actor} ${action} ${name}${detail} — ${reason}`); state.audit=state.audit.slice(0,20);
-  if (action==='ban' && state.currentUser===key) state.currentUser=null;
-  save(); render(); toast(`${name}: ${action} recorded in this browser demo.`);
-}
-function renderRoles() {
-  const list=$('roleList'); list.replaceChildren();
-  const accounts=Object.values(state.players).sort((a,b)=>a.username.localeCompare(b.username));
-  if (!accounts.length) list.append(safeElement('p','No accounts yet. Join to create a local demo profile.','disclaimer'));
-  accounts.forEach(account=>{const card=document.createElement('article');card.className='role-card';card.append(safeElement('h3',account.username),safeElement('p',account.banned?'Banned (local demo)':`${Number(account.money||0).toLocaleString()} coins · active`),safeElement('span',account.role,'role-badge'));list.append(card);});
-}
-function renderAudit() {
-  const list=$('auditList'); if (!list) return; list.replaceChildren();
-  (state.audit.length?state.audit:['No actions yet.']).slice(0,10).forEach(item=>list.append(safeElement('li',item)));
-}
-function renderStatus() {
-  const account=player(); $('displayUsername').textContent=account?.username||'Guest'; $('displayRole').textContent=account?.role||'Player'; $('displayMoney').textContent=`${Number(account?.money||0).toLocaleString()} coins`; $('displayStatus').textContent=account?.banned?'Banned':(account?'Online':'Guest');
-  $('logoutBtn').classList.toggle('hidden',!account); const isOwner=account?.role==='owner'; $('admin-panel').classList.toggle('hidden',!isOwner); $('adminNav').classList.toggle('hidden',!isOwner);
-}
-function render() { renderStatus(); renderGames(); renderQuests(); renderRoles(); renderAudit(); }
-$('loginForm').addEventListener('submit',login);
-$('logoutBtn').addEventListener('click',logout);
-$('studioForm').addEventListener('submit',publishGame);
-$('resetStudioBtn').addEventListener('click',()=>{editorMap=makeEmptyMap();renderEditor();toast('Studio map reset.');});
-document.querySelectorAll('.tile-choice').forEach(button=>button.addEventListener('click',()=>setEditorTile(button.dataset.tile)));
-['studioTitle','studioDescription','studioReward'].forEach(id=>$(id).addEventListener('input',updatePreview));
-$('giftMoneyBtn').addEventListener('click',()=>ownerAction('gift'));
-$('setBalanceBtn').addEventListener('click',()=>ownerAction('set'));
-$('banPlayerBtn').addEventListener('click',()=>ownerAction('ban'));
-$('unbanPlayerBtn').addEventListener('click',()=>ownerAction('unban'));
-document.addEventListener('keydown',onGameKeydown);
-render(); renderEditor(); updatePreview();
-if (player()) { $('welcomeBanner').textContent=`Welcome back to NovaQuest, ${player().username}! Your demo account loaded from this browser.`; $('welcomeBanner').classList.remove('hidden'); }
+const initialGames = [
+  { id:'tap', title:'Star Catcher', description:'Tap 10 times to catch enough stars.', template:'tap', reward:100, creator:'NovaQuest' },
+  { id:'target', title:'Target Hunt', description:'Find the hidden star.', template:'target', reward:100, creator:'NovaQuest' },
+  { id:'quiz', title:'Quick Quiz', description:'Answer correctly to win.', template:'quiz', question:'Which word means a world orbiting a star?', answer:'planet', reward:100, creator:'NovaQuest' },
+  { id:'obby', title:'Crystal Cave Obby', description:'Reach the goal while avoiding lava.', template:'obby', reward:150, creator:'NovaQuest', map:['.........G','..L.......','....L..L..','..L.......','.....L....','.L........','S...L.....'] }
+];
+let state = loadState();
+let activeGame = null, taps = 0, selectedTile='platform', editorMap=emptyMap(), toastTimer;
+const world = { x:95, y:95, speed:190, keys:new Set(), coins:[], collected:0, lastTime:0, frame:0 };
+const walls = [
+  {x:0,y:0,w:800,h:26}, {x:0,y:454,w:800,h:26}, {x:0,y:0,w:26,h:480}, {x:774,y:0,w:26,h:480},
+  {x:150,y:95,w:190,h:42}, {x:430,y:70,w:45,h:145}, {x:560,y:270,w:175,h:45}, {x:240,y:300,w:45,h:110}, {x:375,y:345,w:145,h:38}, {x:80,y:205,w:120,h:38}
+];
+function emptyMap(){const m=Array.from({length:ROWS},()=>Array(COLS).fill('platform'));m[ROWS-1][0]='start';m[0][COLS-1]='goal';return m;}
+function loadState(){try{const v=JSON.parse(localStorage.getItem(STORAGE_KEY));if(!v)return {players:{},currentUser:null,games:initialGames.slice(),quests:[{id:'first',title:'First victory',description:'Win a game round.',reward:100},{id:'creator',title:'World builder',description:'Publish an obby.',reward:100}],audit:[]};return {players:v.players||{},currentUser:v.currentUser||null,games:[...initialGames,...(v.games||[]).filter(g=>!initialGames.some(b=>b.id===g.id))],quests:v.quests||[],audit:v.audit||[]};}catch{return {players:{},currentUser:null,games:initialGames.slice(),quests:[{id:'first',title:'First victory',description:'Win a game round.',reward:100},{id:'creator',title:'World builder',description:'Publish an obby.',reward:100}],audit:[]};}}
+function save(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state));}catch{toast('Could not save in this browser.');}}
+function player(){return state.currentUser?state.players[state.currentUser]:null;}
+function norm(s){return s.trim().toLowerCase();}
+function toast(msg){const e=$('toast');e.textContent=msg;e.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>e.classList.remove('show'),2800);}
+function el(tag,text,cls){const e=document.createElement(tag);e.textContent=text;if(cls)e.className=cls;return e;}
+function login(event){event.preventDefault();const username=$('usernameInput').value.trim(),email=$('emailInput').value.trim().toLowerCase();if(!username)return toast('Enter a username.');const key=norm(username);let p=state.players[key];if(p?.banned)return toast('This local demo account is banned.');if(!p){const role=email===OWNER_EMAIL?'owner':STAFF[key]||'player';p=state.players[key]={username,role,email:email&&email===OWNER_EMAIL?email:'',money:100,banned:false,avatar:{owned:['classic'],equipped:'classic'},completedQuests:[]};}else if(email===OWNER_EMAIL)p.role='owner';state.currentUser=key;save();render();$('welcomeBanner').textContent=`Welcome to NovaQuest, ${p.username}!`; $('welcomeBanner').classList.remove('hidden');toast(`Welcome, ${p.username}!`);$('welcomeBanner').scrollIntoView({behavior:'smooth',block:'center'});}
+function logout(){state.currentUser=null;save();render();$('welcomeBanner').classList.add('hidden');}
+function updateWallet(){const p=player();$('displayMoney').textContent=`${Number(p?.money||0).toLocaleString()} coins`;renderRoles();document.dispatchEvent(new Event('novaquest:account-updated'));}
+function award(n){const p=player();if(!p||p.banned)return;p.money=(Number(p.money)||0)+n;save();updateWallet();}
+function doneQuests(){const p=player();if(!p)return [];p.completedQuests||=[];return p.completedQuests;}
+function renderQuests(){const list=$('questList');list.replaceChildren();state.quests.forEach(q=>{const c=document.createElement('article');c.className='quest-card';c.append(el('h3',q.title),el('p',q.description));const row=document.createElement('div');row.className='meta-row';row.append(el('span',`+${q.reward} coins`,'reward-tag'));const b=el('button',doneQuests().includes(q.id)?'Completed':'Complete quest','quest-btn');b.type='button';b.disabled=doneQuests().includes(q.id);b.onclick=()=>{if(!player())return toast('Join first.');if(player().banned)return toast('Banned players cannot complete quests.');if(doneQuests().includes(q.id))return;doneQuests().push(q.id);award(q.reward);renderQuests();toast('Quest reward claimed!');};row.append(b);c.append(row);list.append(c);});}
+function renderGames(){const list=$('gameList');list.replaceChildren();state.games.forEach(g=>{const c=document.createElement('article');c.className='game-card';c.append(el('h3',g.title),el('p',g.description));const row=document.createElement('div');row.className='meta-row';row.append(el('span',`+${g.reward} coins per win`,'reward-tag'));const b=el('button',g.template==='obby'?'Play obby':'Play game','play-btn');b.type='button';b.onclick=()=>openGame(g);row.append(b);if(g.creator)row.append(el('span',`by ${g.creator}`,'game-credit'));c.append(row);list.append(c);});}
+function openGame(g){if(!player())return toast('Join before playing.');if(player().banned)return toast('Banned players cannot play.');activeGame=g;taps=0;$('activeGameTitle').textContent=g.title;$('gameInstructions').textContent=g.description;$('gameResult').textContent='';const a=$('gameArea');a.replaceChildren();if(g.template==='obby')gameObby(a,g);else if(g.template==='target'){a.append(el('p','Pick the box with the star.'));const target=Math.floor(Math.random()*3),row=document.createElement('div');row.className='target-choices';for(let i=0;i<3;i++){const b=el('button',`☆ ${i+1}`,'game-tap-btn target-button');b.onclick=()=>finish(i===target);row.append(b);}a.append(row);}else if(g.template==='quiz'){a.append(el('p',g.question||'Which word means a world orbiting a star?'));const input=document.createElement('input');input.placeholder='Your answer';a.append(input);const b=el('button','Check answer','primary-btn');b.onclick=()=>finish(input.value.trim().toLowerCase()===(g.answer||'planet'));a.append(b);}else{const count=el('p','0 / 10','progress-text'),b=el('button','TAP!','game-tap-btn');b.onclick=()=>{count.textContent=`${++taps} / 10`;if(taps>=10)finish(true);};a.append(count,b);} $('gameDialog').showModal();}
+function normalizeMap(src){return Array.isArray(src)&&src.length===ROWS?src.map(r=>Array.from({length:COLS},(_,i)=>['platform','lava','start','goal'].includes(r[i])?r[i]:'platform')):emptyMap();}
+function findTile(map,name){for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++)if(map[y][x]===name)return{x,y};return null;}
+function gameObby(area,g){const map=normalizeMap(g.map),start=findTile(map,'start')||{x:0,y:ROWS-1};let pos={...start};const board=document.createElement('div');board.className='obby-board';board.style.gridTemplateColumns=`repeat(${COLS},minmax(24px,1fr))`;function draw(){board.replaceChildren();for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){const c=el('div',map[y][x]==='lava'?'🔥':map[y][x]==='goal'?'⭐':x===pos.x&&y===pos.y?'🧑':'',`obby-cell ${map[y][x]}`);board.append(c);}}function move(d){const delta={up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]}[d],x=pos.x+delta[0],y=pos.y+delta[1];if(x<0||y<0||x>=COLS||y>=ROWS)return;if(map[y][x]==='lava'){pos={...start};toast('Lava! Back to start.');}else{pos={x,y};if(map[y][x]==='goal')finish(true);}draw();}const ctr=document.createElement('div');ctr.className='obby-controls';[['up','↑'],['left','←'],['down','↓'],['right','→']].forEach(([d,t])=>{const b=el('button',t,'obby-control');b.onclick=()=>move(d);ctr.append(b);});area.append(el('p','Move with arrow keys/WASD or touch controls. Avoid lava.'));area.append(board,ctr);draw();activeGame.move=move;}
+function finish(win){if(!activeGame||$('gameResult').textContent)return;if(!win){$('gameResult').textContent='Not this time. Try again!';return;}award(Number(activeGame.reward)||0);$('gameResult').textContent=`You won! +${activeGame.reward} coins.`;const q=state.quests.find(x=>x.id==='first');if(q&&!doneQuests().includes(q.id)){doneQuests().push(q.id);award(q.reward);renderQuests();}}
+function renderWorld(){const canvas=$('worldCanvas'),ctx=canvas.getContext('2d');ctx.clearRect(0,0,canvas.width,canvas.height);ctx.fillStyle='#38745a';ctx.fillRect(0,0,800,480);ctx.fillStyle='#648968';for(let y=40;y<460;y+=46)for(let x=40;x<780;x+=48)ctx.fillRect(x,y,2,2);ctx.fillStyle='#b89b72';ctx.fillRect(28,220,744,48);ctx.fillRect(365,28,48,426);ctx.fillStyle='#b98e54';ctx.fillRect(55,55,72,86);ctx.fillStyle='#d9c28f';ctx.fillRect(61,62,60,55);ctx.fillStyle='#784ca4';ctx.fillRect(625,75,105,105);ctx.fillStyle='#55b8c2';ctx.fillRect(640,91,75,65);ctx.fillStyle='#d6a542';ctx.fillRect(70,320,120,90);ctx.fillStyle='#f7d55f';world.coins.forEach(c=>{if(!c.got){ctx.beginPath();ctx.arc(c.x,c.y,10,0,Math.PI*2);ctx.fill();ctx.fillStyle='#fff0a0';ctx.beginPath();ctx.arc(c.x-3,c.y-3,3,0,Math.PI*2);ctx.fill();ctx.fillStyle='#f7d55f';}});ctx.fillStyle='#342e55';walls.slice(4).forEach(w=>{ctx.fillRect(w.x,w.y,w.w,w.h);ctx.strokeStyle='#8c79bd';ctx.lineWidth=3;ctx.strokeRect(w.x,w.y,w.w,w.h);});const p=player();ctx.fillStyle=p?.avatar?.equipped==='ninja'?'#392e58':p?.avatar?.equipped==='robot'?'#39bdc2':'#7652d2';ctx.beginPath();ctx.arc(world.x,world.y,15,0,Math.PI*2);ctx.fill();ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(world.x-5,world.y-3,2,0,Math.PI*2);ctx.arc(world.x+5,world.y-3,2,0,Math.PI*2);ctx.fill();ctx.fillStyle='#fff';ctx.font='12px sans-serif';ctx.textAlign='center';ctx.fillText(p?.username||'Join first',world.x,world.y-23);}
+function initCoins(){if(world.coins.length)return;world.coins=[{x:215,y:165},{x:350,y:180},{x:520,y:130},{x:690,y:220},{x:300,y:350},{x:580,y:390},{x:120,y:150},{x:480,y:300}].map(c=>({...c,got:false}));}
+function circleRect(x,y,r,w){return x+r>w.x&&x-r<w.x+w.w&&y+r>w.y&&y-r<w.y+w.h;}
+function tickWorld(time){const dt=Math.min((time-world.lastTime)/1000||0,.05);world.lastTime=time;if(player()&&!player().banned){let dx=0,dy=0;if(world.keys.has('ArrowLeft')||world.keys.has('a'))dx--;if(world.keys.has('ArrowRight')||world.keys.has('d'))dx++;if(world.keys.has('ArrowUp')||world.keys.has('w'))dy--;if(world.keys.has('ArrowDown')||world.keys.has('s'))dy++;if(dx&&dy){dx*=.707;dy*=.707;}const nx=world.x+dx*world.speed*dt,ny=world.y+dy*world.speed*dt;const blockX=walls.some(w=>circleRect(nx,world.y,13,w)),blockY=walls.some(w=>circleRect(world.x,ny,13,w));if(!blockX)world.x=nx;if(!blockY)world.y=ny;world.coins.forEach(c=>{if(!c.got&&Math.hypot(c.x-world.x,c.y-world.y)<23){c.got=true;world.collected++;$('coinsCollected').textContent=String(world.collected);award(10);toast('+10 plaza coins!');}});}renderWorld();requestAnimationFrame(tickWorld);}
+function worldKey(e,down){if(!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','a','A','s','S','d','D','w','W'].includes(e.key))return;if(e.target.matches('input,textarea'))return;e.preventDefault();const k=e.key.toLowerCase().startsWith('arrow')?e.key:e.key.toLowerCase();if(down)world.keys.add(k);else world.keys.delete(k);}
+function setEditorTile(t){selectedTile=t;document.querySelectorAll('.tile-choice').forEach(b=>b.classList.toggle('selected',b.dataset.tile===t));$('studioHint').textContent=`Selected ${t}. Click a map tile to paint it.`;}
+function renderEditor(){const b=$('studioBoard');b.replaceChildren();editorMap.forEach((row,y)=>row.forEach((tile,x)=>{const c=el('button',tile==='lava'?'🔥':tile==='start'?'S':tile==='goal'?'★':'',`studio-cell ${tile}`);c.type='button';c.onclick=()=>{if(selectedTile==='start'||selectedTile==='goal'){const old=findTile(editorMap,selectedTile);if(old)editorMap[old.y][old.x]='platform';}editorMap[y][x]=selectedTile==='erase'?'platform':selectedTile;renderEditor();};b.append(c);}));}
+function publishWorld(e){e.preventDefault();if(!player())return toast('Join before publishing.');if(player().banned)return toast('Banned accounts cannot publish.');if(!findTile(editorMap,'start')||!findTile(editorMap,'goal'))return toast('Add a start and goal tile.');const game={id:`world-${Date.now()}`,title:$('studioTitle').value.trim(),description:$('studioDescription').value.trim(),template:'obby',reward:Math.min(1000,Math.max(0,Number($('studioReward').value)||0)),creator:player().username,map:editorMap.map(r=>r.slice())};state.games.unshift(game);save();renderGames();$('studioForm').reset();editorMap=emptyMap();renderEditor();toast('Your world is published in this browser.');}
+function ownerAction(action){if(player()?.role!=='owner')return toast('Owner access required.');const username=$('ownerTargetInput').value.trim();if(!username)return toast('Enter a player username.');const key=norm(username),target=state.players[key],reason=$('ownerReasonInput').value.trim()||'No reason provided';const amount=Number($('ownerAmountInput').value);if((action==='gift'||action==='set')&&(!Number.isInteger(amount)||amount<0||amount>1000000))return toast('Enter a whole coin amount from 0 to 1,000,000.');if(action==='ban'&&target?.role==='owner')return toast('Cannot ban the owner.');if(!target&&action!=='ban')return toast('Player must join in this browser first.');if(action==='gift')target.money=(Number(target.money)||0)+amount;if(action==='set')target.money=amount;if(action==='ban'){state.players[key] ||= {username,role:STAFF[key]||'player',money:0};state.players[key].banned=true;}if(action==='unban'){if(!target)return toast('No local account for that username.');target.banned=false;}const actor=player().username;state.audit.unshift(`${new Date().toLocaleString()}: ${actor} ${action} ${username}${action==='gift'?` +${amount} coins`:action==='set'?` balance=${amount}`:''} — ${reason}`);state.audit=state.audit.slice(0,20);if(action==='ban'&&state.currentUser===key){state.currentUser=null;$('welcomeBanner').classList.add('hidden');}save();render();toast(`${username}: ${action} saved in this browser.`);}
+function renderRoles(){const list=$('roleList');if(!list)return;list.replaceChildren();Object.values(state.players).sort((a,b)=>a.username.localeCompare(b.username)).forEach(p=>{const c=document.createElement('article');c.className='role-card';c.append(el('h3',p.username),el('p',p.banned?'Banned':`${Number(p.money||0).toLocaleString()} coins`),el('span',p.role,'role-badge'));list.append(c);});if(!list.children.length)list.append(el('p','No local players yet.','disclaimer'));}
+function renderAudit(){const list=$('auditList');if(!list)return;list.replaceChildren();(state.audit.length?state.audit:['No actions yet.']).slice(0,10).forEach(item=>list.append(el('li',item)));}
+function render(){const p=player();$('displayUsername').textContent=p?.username||'Guest';$('displayRole').textContent=p?.role||'Player';$('displayMoney').textContent=`${Number(p?.money||0).toLocaleString()} coins`;$('displayStatus').textContent=p?.banned?'Banned':p?'Online':'Not joined';$('logoutBtn').classList.toggle('hidden',!p);const owner=p?.role==='owner';$('admin-panel').classList.toggle('hidden',!owner);$('adminNav').classList.toggle('hidden',!owner);renderGames();renderQuests();renderRoles();renderAudit();renderWorld();$('worldHint').textContent=p?'WASD / arrows or touch controls':'Join to enter the plaza';document.dispatchEvent(new Event('novaquest:account-updated'));}
+$('loginForm').addEventListener('submit',login);$('logoutBtn').addEventListener('click',logout);$('studioForm').addEventListener('submit',publishWorld);$('resetStudioBtn')?.addEventListener('click',()=>{editorMap=emptyMap();renderEditor();});document.querySelectorAll('.tile-choice').forEach(b=>b.addEventListener('click',()=>setEditorTile(b.dataset.tile)));['gift','set','ban','unban'].forEach(action=>$(action==='gift'?'giftMoneyBtn':action==='set'?'setBalanceBtn':action==='ban'?'banPlayerBtn':'unbanPlayerBtn').addEventListener('click',()=>ownerAction(action)));
+document.addEventListener('keydown',e=>worldKey(e,true));document.addEventListener('keyup',e=>worldKey(e,false));window.addEventListener('blur',()=>world.keys.clear());document.querySelectorAll('[data-move]').forEach(button=>{const key={up:'ArrowUp',down:'ArrowDown',left:'ArrowLeft',right:'ArrowRight'}[button.dataset.move];button.addEventListener('pointerdown',e=>{e.preventDefault();world.keys.add(key);});['pointerup','pointerleave','pointercancel'].forEach(type=>button.addEventListener(type,()=>world.keys.delete(key)));});
+document.addEventListener('keydown',e=>{if($('gameDialog').open&&activeGame?.template==='obby'){const d={ArrowUp:'up',w:'up',W:'up',ArrowDown:'down',s:'down',S:'down',ArrowLeft:'left',a:'left',A:'left',ArrowRight:'right',d:'right',D:'right'}[e.key];if(d&&activeGame.move){e.preventDefault();activeGame.move(d);}}});
+initCoins();renderEditor();render();requestAnimationFrame(tickWorld);
