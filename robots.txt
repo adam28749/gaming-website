@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://adam28749.github.io/gaming-website/sitemap.xml
