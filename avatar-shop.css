@@ -1,0 +1,19 @@
+#avatar-shop { scroll-margin-top: 20px; }
+.avatar-shop-layout { display: grid; grid-template-columns: minmax(190px,.65fr) minmax(0,1.35fr); gap: 20px; align-items: start; }
+.avatar-preview-panel { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 22px; background: rgba(8,13,24,.5); border: 1px solid var(--line); border-radius: 18px; }
+.avatar-preview-panel h3 { margin: 14px 0 4px; }
+.avatar-preview-panel p { margin: 0; color: var(--muted); font-size: .85rem; }
+.avatar-preview { --avatar-color: #5267ad; width: 150px; height: 150px; display: grid; place-items: center; border-radius: 50%; background: radial-gradient(circle at 35% 25%, #ffffff44, transparent 38%), var(--avatar-color); border: 4px solid rgba(255,255,255,.25); box-shadow: 0 12px 35px color-mix(in srgb, var(--avatar-color), transparent 45%); }
+.avatar-preview span { font-size: 5rem; filter: drop-shadow(0 5px 5px #0005); }
+.avatar-catalog { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
+.avatar-item { display: flex; align-items: center; gap: 12px; min-width: 0; padding: 13px; border: 1px solid var(--line); border-radius: 15px; background: var(--panel-light); }
+.avatar-item-icon { --avatar-color: #5267ad; flex: 0 0 52px; width: 52px; height: 52px; display: grid; place-items: center; border-radius: 15px; background: var(--avatar-color); font-size: 1.8rem; }
+.avatar-item-details { flex: 1; min-width: 0; }
+.avatar-item-details h3 { margin: 0 0 4px; font-size: .92rem; }
+.avatar-item-details p { margin: 0 0 6px; color: var(--muted); font-size: .75rem; line-height: 1.35; }
+.avatar-price { color: var(--gold); font-size: .75rem; font-weight: 800; }
+.avatar-action { flex: 0 0 auto; padding: 9px 11px; font-size: .78rem; }
+.avatar-action:disabled { opacity: .7; cursor: default; transform: none; }
+.avatar-action.buy-action { background: linear-gradient(135deg,var(--primary),var(--primary-2)); border: 0; color: white; }
+@media(max-width:850px) { .avatar-shop-layout { grid-template-columns: 1fr; } .avatar-catalog { grid-template-columns: 1fr; } }
+@media(max-width:480px) { .avatar-item { flex-wrap: wrap; } .avatar-action { margin-left: auto; } }
