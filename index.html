@@ -4,30 +4,60 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#0d1224" />
-  <meta name="description" content="Play arcade mini-games and obstacle courses, complete quests, and build games in NovaQuest Arena." />
+  <meta name="description" content="Play arcade games and obstacle courses, complete quests, and build your own worlds in NovaQuest Arena." />
   <title>NovaQuest Arena — Play, Quest, Create</title>
   <link rel="stylesheet" href="styles.css" />
   <link rel="stylesheet" href="obby.css" />
+  <link rel="stylesheet" href="studio.css" />
 </head>
 <body>
   <div class="background-glow" aria-hidden="true"></div>
   <header class="topbar">
-    <a class="brand-wrap" href="#home"><span class="brand-mark">NQ</span><span><span class="brand-name">NovaQuest Arena</span><span class="brand-tag">Play. Create. Quest.</span></span></a>
+    <a class="brand-wrap" href="#home" aria-label="NovaQuest home"><span class="brand-mark">NQ</span><span><span class="brand-name">NovaQuest Arena</span><span class="brand-tag">Play. Create. Quest.</span></span></a>
     <nav class="main-nav" aria-label="Main navigation"><a href="#play">Play</a><a href="#quests">Quests</a><a href="#studio">Studio</a><a href="#admin-panel" id="adminNav" class="hidden">Admin</a></nav>
     <button id="logoutBtn" class="ghost-btn hidden" type="button">Log out</button>
   </header>
+
   <main class="page-shell" id="home">
     <section class="hero panel">
-      <div class="hero-copy"><span class="eyebrow">Your gaming universe</span><h1>Play games. Complete quests. Build your own.</h1><p>Play arcade challenges and obstacle courses, earn demo coins, and create games in Studio.</p><div class="cta-row"><a class="primary-btn" href="#play">Explore games</a><a class="secondary-btn" href="#studio">Open Studio</a></div></div>
-      <form class="login-card" id="loginForm"><h2>Enter the arena</h2><label>Username<input id="usernameInput" autocomplete="username" maxlength="24" required placeholder="Choose your username" /></label><label>Email (optional)<input id="emailInput" type="email" autocomplete="email" placeholder="For your account" /></label><label>Password (optional)<input id="passwordInput" type="password" autocomplete="new-password" placeholder="Optional in this demo" /></label><button class="primary-btn full-width" type="submit">Join / continue</button><p class="disclaimer">Your demo profile and progress save in this browser on this device. This is not a secure account system—do not enter a real password.</p></form>
+      <div class="hero-copy"><span class="eyebrow">Your gaming universe</span><h1>Play games. Complete quests. Build your own worlds.</h1><p>Explore block-style obstacle courses, earn demo coins, and create games in Studio.</p><div class="cta-row"><a class="primary-btn" href="#play">Explore games</a><a class="secondary-btn" href="#studio">Open Studio</a></div></div>
+      <form class="login-card" id="loginForm"><h2>Enter the arena</h2><label>Username<input id="usernameInput" autocomplete="username" maxlength="24" required placeholder="Choose your username" /></label><label>Email (optional)<input id="emailInput" type="email" autocomplete="email" placeholder="For your account" /></label><label>Password (optional)<input id="passwordInput" type="password" autocomplete="new-password" placeholder="Optional in this demo" /></label><button class="primary-btn full-width" type="submit">Join / continue</button><p class="disclaimer">Demo profile and progress save in this browser on this device. This is not a secure account system—do not enter a real password.</p></form>
     </section>
     <div id="welcomeBanner" class="welcome-banner hidden" role="status" aria-live="polite"></div>
     <section class="status-bar panel"><div class="status-chip"><span class="status-label">Player</span><strong id="displayUsername">Guest</strong></div><div class="status-chip"><span class="status-label">Role</span><strong id="displayRole">Player</strong></div><div class="status-chip money-chip"><span class="status-label">In-game money</span><strong id="displayMoney">0 coins</strong></div><div class="status-chip"><span class="status-label">Status</span><strong id="displayStatus">Guest</strong></div></section>
-    <section class="dashboard-grid" id="play"><section class="panel"><div class="section-header"><h2>Games</h2><span class="pill">Playable mini-games</span></div><div id="gameList" class="card-list"></div></section><section class="panel" id="quests"><div class="section-header"><h2>Quest board</h2><span class="pill">Challenges</span></div><div id="questList" class="card-list"></div></section></section>
-    <section class="panel studio-panel" id="studio"><div class="section-header"><div><span class="eyebrow">Creator workshop</span><h2>Game Studio</h2></div><span class="pill">No-code builder</span></div><p class="studio-intro">Choose a mini-game template, give it a name, and publish it to the games list.</p><div class="studio-grid"><form id="studioForm" class="studio-form"><label>Game name<input id="studioTitle" maxlength="40" required placeholder="My awesome game" /></label><label>Instructions<textarea id="studioDescription" maxlength="180" rows="3" required placeholder="Tell players what to do"></textarea></label><label>Game template<select id="studioTemplate"><option value="tap">Tap challenge — tap 10 times</option><option value="target">Target hunt — find the star</option><option value="quiz">Quick quiz</option><option value="obby">Obby — reach the goal</option></select></label><label>Coins per win<input id="studioReward" type="number" min="0" max="1000" step="10" value="100" required /></label><button class="primary-btn" type="submit">Publish game</button></form><section class="studio-preview"><div class="section-header"><h3>Preview</h3><span class="pill">Your draft</span></div><div class="preview-card"><span class="preview-icon">✦</span><h3 id="previewTitle">Your game title</h3><p id="previewDescription">Your game instructions will appear here.</p><p id="previewTemplate" class="preview-template">Tap challenge · 100 coins</p></div><p class="disclaimer">Published games save to this browser only. Shared publishing requires a server.</p></section></div></section>
+
+    <section class="dashboard-grid" id="play">
+      <section class="panel"><div class="section-header"><h2>Games & worlds</h2><span class="pill">Playable</span></div><div id="gameList" class="card-list"></div></section>
+      <section class="panel" id="quests"><div class="section-header"><h2>Quest board</h2><span class="pill">Challenges</span></div><div id="questList" class="card-list"></div></section>
+    </section>
+
+    <section class="panel studio-panel" id="studio">
+      <div class="section-header"><div><span class="eyebrow">Creator workshop</span><h2>Nova Studio</h2></div><span class="pill">Build a world</span></div>
+      <p class="studio-intro">Build a block-style obby: select a tile, then tap squares to place platforms, lava, a start point, and a goal. Publish it to try your own course.</p>
+      <div class="studio-grid">
+        <form id="studioForm" class="studio-form">
+          <label>World name<input id="studioTitle" maxlength="40" required placeholder="My obstacle world" /></label>
+          <label>Instructions<textarea id="studioDescription" maxlength="180" rows="3" required placeholder="Tell players about your world"></textarea></label>
+          <label>Coins per win<input id="studioReward" type="number" min="0" max="1000" step="10" value="100" required /></label>
+          <div class="tile-palette" role="group" aria-label="Choose a tile to paint">
+            <button type="button" class="tile-choice selected" data-tile="platform"><span class="tile-swatch platform-swatch"></span>Platform</button>
+            <button type="button" class="tile-choice" data-tile="lava"><span class="tile-swatch lava-swatch"></span>Lava</button>
+            <button type="button" class="tile-choice" data-tile="start"><span class="tile-swatch start-swatch">S</span>Start</button>
+            <button type="button" class="tile-choice" data-tile="goal"><span class="tile-swatch goal-swatch">★</span>Goal</button>
+            <button type="button" class="tile-choice" data-tile="erase"><span class="tile-swatch erase-swatch">×</span>Erase</button>
+          </div>
+          <p id="studioHint" class="disclaimer">Selected: Platform. Click or tap the grid to build your course.</p>
+          <div id="studioBoard" class="studio-board" role="grid" aria-label="Your editable obby map"></div>
+          <div class="studio-buttons"><button class="secondary-btn" id="resetStudioBtn" type="button">Reset map</button><button class="primary-btn" type="submit">Publish world</button></div>
+        </form>
+        <aside class="studio-preview"><div class="section-header"><h3>World preview</h3><span class="pill">Block builder</span></div><div class="preview-card"><span class="preview-icon">▦</span><h3 id="previewTitle">Your world name</h3><p id="previewDescription">Your world instructions will appear here.</p><p id="previewTemplate" class="preview-template">Obby world · 100 coins</p></div><p class="disclaimer">This is a small 2D block-course builder inspired by user-created game platforms. Worlds are saved in this browser only.</p></aside>
+      </div>
+    </section>
+
     <section class="admin-layout hidden" id="admin-panel"><section class="panel"><div class="section-header"><div><span class="eyebrow">Local demo controls</span><h2>Owner admin panel</h2></div><span class="pill danger">Owner</span></div><p class="disclaimer">Demo only: roles and actions are stored in this browser, not securely checked by a server.</p><div class="tool-stack"><div class="tool-row"><label>Player username<input id="ownerTargetInput" maxlength="24" placeholder="Player username" /></label><label>Coins<input id="ownerAmountInput" type="number" min="0" max="1000000" value="100" /></label></div><label>Reason<input id="ownerReasonInput" maxlength="140" placeholder="Reason for action" /></label><div class="tool-actions"><button class="primary-btn" id="giftMoneyBtn" type="button">Gift coins</button><button class="secondary-btn" id="setBalanceBtn" type="button">Set balance</button><button class="danger-btn" id="banPlayerBtn" type="button">Ban player</button><button class="ghost-btn" id="unbanPlayerBtn" type="button">Unban player</button></div></div><div class="audit-box"><h3>Recent actions (this browser)</h3><ol id="auditList"></ol></div></section><section class="panel"><div class="section-header"><h2>Role directory</h2><span class="pill">Local demo</span></div><div id="roleList" class="role-list"></div></section></section>
   </main>
-  <dialog id="gameDialog" class="game-dialog"><form method="dialog"><button class="dialog-close ghost-btn">Close</button></form><span class="eyebrow">Mini-game</span><h2 id="activeGameTitle">Game</h2><p id="gameInstructions">Play to earn coins.</p><div id="gameArea"></div><p id="gameResult" class="game-result" role="status" aria-live="polite"></p></dialog>
+
+  <dialog id="gameDialog" class="game-dialog"><form method="dialog"><button class="dialog-close ghost-btn">Close</button></form><span class="eyebrow">Game world</span><h2 id="activeGameTitle">Game</h2><p id="gameInstructions">Play to earn coins.</p><div id="gameArea"></div><p id="gameResult" class="game-result" role="status" aria-live="polite"></p></dialog>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <script src="script.js"></script>
 </body>

@@ -1,23 +1,19 @@
 # NovaQuest Arena
 
-Play mini-games and obstacle courses, earn demo coins, complete quests, and build simple games in Studio.
+A browser-based, Roblox-inspired community prototype: play mini-games and obstacle worlds, earn demo coins, complete quests, and create your own block-style obby courses in Nova Studio.
 
-## Accounts and saving
+## Play and create
 
-Press **Join / continue** with a username. The site saves your demo profile, coins, quest progress, and created games in that browser's local storage and restores the current profile on reload. This is browser/device-local only: it does not sync to another browser or device, and clearing site data removes it. Optional password input is not real authentication; do not enter a real password.
+Join with a username to save a demo profile in the current browser. Explore built-in games, then use Nova Studio to paint platforms, lava, a start tile, and a goal on a grid. Publish a world and play your course with keyboard or on-screen controls.
 
-## Obby game
+## Saving and limitations
 
-Open **Crystal Cave Obby** in Games. Move with arrow keys or WASD on desktop, or use the on-screen arrows on touch devices. Reach the checkered goal without stepping on lava to win coins. Studio also lets creators publish their own obby using the Obby template.
+Profiles, progress, created worlds, and owner demo actions are stored in that browser's local storage. They do not sync across browsers or devices and can be edited or deleted by the browser user. Passwords are not authenticated; do not enter a real password. This prototype is not a Roblox product, and does not provide Roblox's 3D engine, networking, moderation, or account services.
 
-## Studio and owner panel
+## Owner panel
 
-Studio supports tap, target, quiz, and obby templates. The owner panel provides local demo controls to gift coins, set balances, ban/unban accounts, and see an action log. These are prototype features only and are not secure or shared across users.
+The owner demo panel can gift coins, set a balance, ban/unban a local demo player, and show an action log. Typed email is not identity verification. For a real public service, these operations must be enforced by an authenticated backend.
 
-## Public site
+## Website
 
 https://adam28749.github.io/gaming-website/
-
-## Security limitations
-
-This static site has no server-side authentication, shared database, or secure role enforcement. Browser storage can be edited. The typed email/username role check is not verified identity. A production platform requires verified authentication plus server-side authorization, account storage, and moderation logs.
