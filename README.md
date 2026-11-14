@@ -1,15 +1,19 @@
 # NovaQuest Arena
 
-A static browser prototype for a gaming community: players can play mini-games, earn demo coins, complete quests, and use the no-code Studio to create and publish simple playable mini-games.
+A static browser prototype for a gaming community: play simple mini-games, earn demo coins, complete quests, and use the no-code Studio to create and publish playable mini-games.
 
-## Studio
+## Playing
 
-Open **Studio** from the navigation. Set a name and instructions, select a template (tap challenge, target hunt, or quick quiz), choose a demo reward, and publish. Your published game appears in the Games list and can be played. Game drafts and published games are stored only in the current browser.
+Join with a username, then choose a game. The built-in games include a tap challenge, a hidden-target pick, and a quick quiz. Successful rounds award demo coins; finishing your first round also completes the first-game quest. Joining displays a welcome message.
 
-## Run / publish
+## Studio and owner panel
 
-Open `index.html` locally or host the static files. GitHub Pages must be enabled in the repository's Settings → Pages before a public site URL will work.
+Studio lets players build and publish games using those simple templates. The owner demo panel includes actions to gift coins, set a balance, ban or unban a player, record a reason, and view a local audit list. These features only change this browser's local data.
 
-## Security and limitations
+## Publish
 
-This is a front-end-only demo, not a production game platform. It has no secure authentication, shared database, or server-side role enforcement. Account data, game submissions, coins, and moderation state are stored in local browser storage and can be changed by the browser user. The email check is only demo behavior, not proof of identity. Never enter a real password or rely on it for real accounts, bans, or currency. Public game sharing and secure admin access require a backend with verified authentication and server-side authorization.
+GitHub Pages serves this static site at https://adam28749.github.io/gaming-website/ when Pages deployment succeeds. Check the repository Actions tab for status.
+
+## Security limitations
+
+This is not a production platform: accounts, roles, games, currency, and moderation data are stored in the browser and can be changed by its user. Email entry is not verified identity. Never enter a real password or rely on these demo controls for real accounts, bans, or currency. Secure shared games and moderation need server-side authentication, authorization, and storage.
