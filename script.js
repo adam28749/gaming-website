@@ -22,11 +22,16 @@ let activeGame = null;
 let taps = 0;
 let toastTimer;
 const $ = id => document.getElementById(id);
+
 function loadState() {
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    return saved && typeof saved === 'object' ? { ...structuredClone(initial), ...saved, players: saved.players || {}, completed: saved.completed || {}, audit: saved.audit || [] } : structuredClone(initial);
-  } catch { return structuredClone(initial); }
+    return saved && typeof saved === 'object'
+      ? { ...structuredClone(initial), ...saved, players: saved.players || {}, completed: saved.completed || {}, audit: saved.audit || [] }
+      : structuredClone(initial);
+  } catch {
+    return structuredClone(initial);
+  }
 }
 function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
 function keyFor(name) { return name.trim().toLowerCase(); }
@@ -234,12 +239,15 @@ function publishGame(event) {
 }
 function ownerAction(action) {
   if (player()?.role !== 'owner') return toast('Owner access required.');
+  if (!['gift', 'set', 'ban', 'unban'].includes(action)) return toast('Unknown admin action.');
   const name = $('ownerTargetInput').value.trim();
+  if (!name) return toast('Enter the player username.');
   const key = keyFor(name);
-  const amount = Number($('ownerAmountInput').value);
-  const reason = $('ownerReasonInput').value.trim() || 'No reason provided';
-  if (!name || !Number.isFinite(amount) || amount < 0 || amount > 1000000) return toast('Enter a player and valid amount.');
   const target = state.players[key];
+  const reason = $('ownerReasonInput').value.trim() || 'No reason provided';
+  const needsAmount = action === 'gift' || action === 'set';
+  const amount = needsAmount ? Number($('ownerAmountInput').value) : 0;
+  if (needsAmount && (!Number.isInteger(amount) || amount < 0 || amount > 1000000)) return toast('Enter a whole coin amount from 0 to 1,000,000.');
   if (!target && action !== 'ban') return toast('That player has not joined in this browser.');
   if (action === 'ban' && target?.role === 'owner') return toast('The owner account cannot be banned here.');
   if (action === 'gift') target.money = (Number(target.money) || 0) + amount;
@@ -248,17 +256,15 @@ function ownerAction(action) {
     state.players[key] ||= { username: name, role: 'player', money: 0 };
     state.players[key].banned = true;
   }
-  if (action === 'unban') {
-    if (!target) return toast('Player not found.');
-    target.banned = false;
-  }
+  if (action === 'unban') target.banned = false;
   const actor = player().username;
-  state.audit.unshift(`${new Date().toLocaleString()}: ${actor} ${action} ${name}${action === 'gift' ? ` (${amount} coins)` : action === 'set' ? ` (balance ${amount})` : ''} — ${reason}`);
+  const detail = action === 'gift' ? ` (${amount} coins)` : action === 'set' ? ` (balance ${amount})` : '';
+  state.audit.unshift(`${new Date().toLocaleString()}: ${actor} ${action} ${name}${detail} — ${reason}`);
   state.audit = state.audit.slice(0, 20);
   if (action === 'ban' && state.currentUser === key) state.currentUser = null;
   save();
   render();
-  toast(`${name} updated; action added to the local demo log.`);
+  toast(`${action === 'gift' ? `${amount} coins gifted to` : action === 'set' ? 'Balance set for' : action === 'ban' ? 'Banned' : 'Unbanned'} ${name}.`);
 }
 function renderRoles() {
   const list = $('roleList');
@@ -268,10 +274,10 @@ function renderRoles() {
   people.forEach(person => {
     const card = document.createElement('article');
     card.className = 'role-card';
-    card.append(safeElement('h3', person.username), safeElement('p', person.banned ? 'Banned (local demo)' : 'Active (local demo)'), safeElement('span', person.role, 'role-badge'));
+    card.append(safeElement('h3', person.username), safeElement('p', person.banned ? 'Banned (local demo)' : `${Number(person.money || 0).toLocaleString()} coins · active`), safeElement('span', person.role, 'role-badge'));
     list.append(card);
   });
-  if (!people.length) list.append(safeElement('p', 'No demo accounts yet.', 'disclaimer'));
+  if (!people.length) list.append(safeElement('p', 'No demo accounts yet. Players appear here after they join in this browser.', 'disclaimer'));
 }
 function renderAudit() {
   const list = $('auditList');
